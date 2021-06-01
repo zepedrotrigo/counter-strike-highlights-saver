@@ -1,0 +1,19 @@
+APAGAR O TRY EXCEPT DA MUSICA
+ao fazer double kill as vezes deteta double kill + double kill
+
+Refactor detect_highlights():
+os timestamps estao guardados em vars["t1"], vars["t2"], etc..
+tirar o t a t1 e a t2 e fazer a subtração para obter a distancia.
+Depois para o par de distancia 5, ver se é menor que input_timer_5k
+para cada par de distancia 4, ver se é menor que input_timer_4k
+para cada par de distancia 3 ver se é menor que input_timer_3k e lá dentro ver
+se a esquerda ou a direita tem distancia 2 e se sim ver se esse par é menor que input_timer_2k
+
+meter opção delete recording after (por default deixar estar)
+meter tempos 12-15-20-30
+fazer interface a pedir a hotkey para iniciar e parar gravacao e recordings_path
+remover o logs.txt (pesquisar pelos TODOS)
+
+Ver se funciona em ficheiros nao .mp4 porcausa da função concatenate clips que dá sempre a extensao .mp4
+
+pyinstaller --name "highlightsCS by Fortnyce" --icon=icon.ico --onefile --add-data "recording_started.mp3;." --add-data "recording_stopped.mp3;." --add-data "cyka_blyat_started.mp3;." highlightsCS.py
