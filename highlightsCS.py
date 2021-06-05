@@ -6,7 +6,6 @@ from colorama import Fore
 from pygame import mixer
 from fortnyce_ffmpeg import extract_subclip, concatenate_videoclips
 from win32gui import GetWindowText, GetForegroundWindow
-from utilities import *
 
 vars = {
     "steamid":"76561198210384665",
@@ -25,10 +24,10 @@ vars = {
     "create_movie":False,
     "delay_after":3,
     "delay_before":5,
-    "input_2k_time":10,
-    "input_3k_time":20,
-    "input_4k_time":30,
-    "input_5k_time":45,
+    "input_2k_time":12,
+    "input_3k_time":15,
+    "input_4k_time":20,
+    "input_5k_time":30,
     "recordings_path":"",
     "sound":"None",
     "endround_music_playing":False,
@@ -571,7 +570,6 @@ class MyRequestHandler(BaseHTTPRequestHandler):
         return
 
 #---------------------------------------------------------MAIN---------------------------------------------------------------
-laptop_compatibility() # call registry changes here
 os.system('cls')
 os.system('python tkinter_interface.py') #call tkinter interface here
 

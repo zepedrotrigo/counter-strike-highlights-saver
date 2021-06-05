@@ -18,10 +18,10 @@ vars = {
    "create_movie":False,
    "delay_after":3,
    "delay_before":5,
-   "input_2k_time":10,
-   "input_3k_time":20,
-   "input_4k_time":30,
-   "input_5k_time":45,
+   "input_2k_time":12,
+   "input_3k_time":15,
+   "input_4k_time":20,
+   "input_5k_time":30,
    "recordings_path":"",
 }
 
