@@ -217,8 +217,8 @@ def detect_highlights():
                     epoch_timestamps[t5] = t5
                     file_prefixes.append("")
 
-    elif (t2 - t1 < vars["input_2k_time"]) and t2 != 0: #double kill case(2-1) AND double kill case (4-3)
-        if (t4 - t3 < vars["input_2k_time"]) and vars["input_4k_time"] != 0:
+    elif ( (t2 - t1 < vars["input_2k_time"]) and (t2 != 0) and # double kill case(2-1) AND
+            (t4 - t3 < vars["input_2k_time"]) and (t4 != 0) ): # double kill case (4-3)
             epoch_timestamps[t2] = t1
             epoch_timestamps[t4] = t3
             file_prefixes.append("_2K")
@@ -230,8 +230,8 @@ def detect_highlights():
                     epoch_timestamps[t5] = t5
                     file_prefixes.append("")
 
-    elif (t2 - t1 < vars["input_2k_time"]) and t2 != 0: #double kill case(2-1) AND double kill case (5-4)
-        if (t5 - t4 < vars["input_2k_time"]) and t5 != 0:
+    elif ( (t2 - t1 < vars["input_2k_time"]) and (t2 != 0) and #double kill case(2-1) AND
+            (t5 - t4 < vars["input_2k_time"]) and (t5 != 0) ): # double kill case (5-4)
             epoch_timestamps[t2] = t1
             epoch_timestamps[t5] = t4
             file_prefixes.append("_2K")
@@ -243,8 +243,8 @@ def detect_highlights():
                     epoch_timestamps[t5] = t5
                     file_prefixes.append("")
 
-    elif (t3 - t2 < vars["input_2k_time"]) and t3 != 0: #double kill case(3-2) AND double kill case (5-4)
-        if (t5 - t4 < vars["input_2k_time"]) and t5 != 0:
+    elif ( (t3 - t2 < vars["input_2k_time"]) and (t3 != 0) and #double kill case(3-2) AND
+            (t5 - t4 < vars["input_2k_time"]) and (t5 != 0) ): #double kill case (5-4)
             epoch_timestamps[t3] = t2
             epoch_timestamps[t5] = t4
             file_prefixes.append("_2K")
@@ -255,7 +255,6 @@ def detect_highlights():
                 if t5 != 0:
                     epoch_timestamps[t5] = t5
                     file_prefixes.append("")
-
 
     elif (t2 - t1 < vars["input_2k_time"]) and t2 != 0: #double kill case(2-1)
         epoch_timestamps[t2] = t1
@@ -367,12 +366,9 @@ def save_round(player_steamid, round_kills):
     
     if len(epoch_timestamps) != 0:
         save_highlights() # Save detected highlights by appending them to timestamps
-
-        vars["processed"] = False
-        vars["saved_round"] = True
         print("--------------------------\nEnd of round. Clips Saved!\n--------------------------\n\n1k: {}, 2k: {}, 3k: {}, 4k: {}, 5k: {}, round: {}\n\n".format(vars["t1"],vars["t2"],vars["t3"],vars["t4"],vars["t5"],vars["round"]))
     else:
-        print("NO CLIPS SAVED\n\n1k: {}, 2k: {}, 3k: {}, 4k: {}, 5k: {}, round: {}\n\n".format(vars["t1"],vars["t2"],vars["t3"],vars["t4"],vars["t5"],vars["round"]))
+        print("--------------------------\nEnd of round. No clips saved.\n--------------------------\n\n1k: {}, 2k: {}, 3k: {}, 4k: {}, 5k: {}, round: {}\n\n".format(vars["t1"],vars["t2"],vars["t3"],vars["t4"],vars["t5"],vars["round"]))
 
     vars["t1"] = 0 #reset timers
     vars["t2"] = 0
@@ -380,6 +376,8 @@ def save_round(player_steamid, round_kills):
     vars["t4"] = 0
     vars["t5"] = 0
     vars["round"] += 1
+    vars["processed"] = False
+    vars["saved_round"] = True
 
 def process_clips():  
     global vars, timestamps, epoch_timestamps, file_prefixes
