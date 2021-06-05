@@ -1,4 +1,4 @@
-import json, time, os, random, keyboard, collections, pickle
+import json, time, os, random, keyboard, collections, pickle, win32api
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from re import MULTILINE
 from pathlib import Path
@@ -365,10 +365,14 @@ def save_round(player_steamid, round_kills):
     
     if len(epoch_timestamps) != 0:
         save_highlights() # Save detected highlights by appending them to timestamps
-        print("--------------------------\nEnd of round. Clips Saved!\n--------------------------\n\n1k: {}, 2k: {}, 3k: {}, 4k: {}, 5k: {}, round: {}\n\n".format(vars["t1"],vars["t2"],vars["t3"],vars["t4"],vars["t5"],vars["round"]))
+        kill_1 = "{:.2f}s".format(max(0,vars["t1"]-vars["recording_start_time"]))
+        kill_2 = "{:.2f}s".format(max(0,vars["t2"]-vars["recording_start_time"]))
+        kill_3 = "{:.2f}s".format(max(0,vars["t3"]-vars["recording_start_time"]))
+        kill_4 = "{:.2f}s".format(max(0,vars["t4"]-vars["recording_start_time"]))
+        kill_5 = "{:.2f}s".format(max(0,vars["t5"]-vars["recording_start_time"]))
+        print("--------------------------\nEnd of round {}. Clips Saved!\n\n1st kill: {} | 2nd kill: {} | 3rd kill: {} | 4th kill: {} | 5th kill: {}\n--------------------------\n\n".format(vars["round"],kill_1,kill_2,kill_3,kill_4,kill_5))
     else:
-        print("--------------------------\nEnd of round. No clips saved.\n--------------------------\n\n1k: {}, 2k: {}, 3k: {}, 4k: {}, 5k: {}, round: {}\n\n".format(vars["t1"],vars["t2"],vars["t3"],vars["t4"],vars["t5"],vars["round"]))
-
+        print("--------------------------\nEnd of round {}. No clips Saved!\n--------------------------\n\n".format(vars["round"]))
     vars["t1"] = 0 #reset timers
     vars["t2"] = 0
     vars["t3"] = 0
@@ -430,9 +434,10 @@ def process_clips():
         print("steamcommunity.com/id/fortnyce  github.com/zepedrotrigo")
         print(Fore.GREEN + "Don't close. Keep open\nVideos created!" + Fore.WHITE)
 
-def my_logic(round_phase, round_kills, player_steamid, map_phase, player_health, bomb_state, provider_steamid):
+def my_logic(round_phase, round_kills, player_steamid, map_phase, bomb_state):
     global vars, epoch_timestamps, timestamps, file_prefixes
     if map_phase == "live":
+        print(vars["input_2k_time"])
         if round_phase == "live":
             start_recording(vars["start_hotkey"])  
             vars["endround_music_playing"] = False
@@ -472,6 +477,14 @@ def my_logic(round_phase, round_kills, player_steamid, map_phase, player_health,
             keyboard.release(vars["start_hotkey"])
             vars["recording"] = False
             process_clips()
+
+def on_exit(signal_type):
+    global vars
+    recording = vars["recording"]
+
+    if recording:
+        keyboard.press_and_release(vars["stop_hotkey"])
+    pass
 
 #----------------------------------------------------Classes--------------------------------------------------------------------
 class MyServer(HTTPServer):
@@ -515,21 +528,13 @@ class MyRequestHandler(BaseHTTPRequestHandler):
         round_kills = self.get_round_kills(payload)
         player_steamid = self.get_player_steamid(payload)
         map_phase = self.get_map_phase(payload)
-        player_health = self.get_player_health(payload)
         bomb_state = self.get_bomb_state(payload)
-        provider_steamid = self.get_provider_steamid(payload)
 
-        my_logic(round_phase, round_kills, player_steamid, map_phase, player_health, bomb_state, provider_steamid)
+        my_logic(round_phase, round_kills, player_steamid, map_phase, bomb_state)
 
     def get_player_steamid(self, payload):
         if 'player' in payload and 'steamid' in payload['player']:
             return payload['player']['steamid']
-        else:
-            return None
-
-    def get_provider_steamid(self, payload):
-        if 'provider' in payload and 'steamid' in payload['provider']:
-            return payload['provider']['steamid']
         else:
             return None
 
@@ -551,12 +556,6 @@ class MyRequestHandler(BaseHTTPRequestHandler):
         else:
             return None
 
-    def get_player_health(self, payload):
-        if 'player' in payload and 'state' in payload['player'] and 'health' in payload['player']['state']:
-            return payload['player']['state']['health']
-        else:
-            return None
-
     def get_bomb_state(self, payload):
         if 'round' in payload and 'bomb' in payload['round']:
             return payload['round']['bomb']
@@ -570,6 +569,7 @@ class MyRequestHandler(BaseHTTPRequestHandler):
         return
 
 #---------------------------------------------------------MAIN---------------------------------------------------------------
+win32api.SetConsoleCtrlHandler(on_exit, True)
 os.system('cls')
 os.system('python tkinter_interface.py') #call tkinter interface here
 
@@ -580,6 +580,10 @@ print("steamcommunity.com/id/fortnyce  github.com/zepedrotrigo")
 try:
     server.serve_forever()
 except (KeyboardInterrupt, SystemExit):
+    recording = vars["recording"]
+
+    if recording:
+        keyboard.press_and_release(vars["stop_hotkey"])
     pass
 
 server.server_close()
