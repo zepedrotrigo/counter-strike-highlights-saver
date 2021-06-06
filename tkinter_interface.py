@@ -92,7 +92,7 @@ class CollapsiblePane(ttk.Frame):
         # main reason to do this is Button do not support 
         # variable option but checkbutton do
         self._button = ttk.Checkbutton(self, variable = self._variable, 
-                            command = self._activate, style ="TButton") 
+                            command = self._activate, style ="TButton", cursor="hand2") 
         self._button.grid(row = 0, column = 0) 
   
         # This wil create a seperator 
@@ -272,38 +272,38 @@ frame_music.pack(fill="both", expand=1)
 notebook.add(frame_highlights, text="Highlights")
 notebook.add(frame_music, text="Music")
 #---------Tab highlights
-l1 = tk.Label(frame_highlights,text="IMPORTANT: Set your Instant Replay Length to atleast 3 minutes",justify=LEFT, anchor="w", font=('Arial',9,'bold')).grid(row=7,column=1,sticky = W,pady=(20,0))
-l2 = tk.Label(frame_highlights,text="NVIDIA Shadowplay turns on and off automatically",justify=LEFT, anchor="w",font=('Arial',9,'bold')).grid(row=8,column=1,sticky = W)
-l3 = tk.Label(frame_highlights,text="Is this tool awesome and saves you a lot of work? You can thank me here :)",justify=LEFT, anchor="w", fg="#0645AD", font=('Arial',9,'bold','underline'))
-l3.grid(sticky = W, row=9, column=1)
-l3.bind("<Button-1>", lambda e: webbrowser.open_new("https://steamcommunity.com/tradeoffer/new/?partner=250118937&token=s8eat9SV"))
-b1 = tk.Button(frame_highlights,text="Start!",font=('bold'), command=guardar, height=1)
-b1.grid(row=9,column=2)
+tk.Label(frame_highlights,text="",anchor="w").grid(row=7,column=1,sticky = W) # white space
+l1 = tk.Label(frame_highlights,text="NVIDIA Shadowplay turns on and off automatically",justify=LEFT, anchor="w",font=('Arial',9,'bold')).grid(row=8,column=0,sticky = W)
+l2 = tk.Label(frame_highlights,text="Is this tool awesome and saves you a lot of work? You can thank me here :)",justify=LEFT, anchor="w", fg="#0645AD", font=('Arial',9,'bold','underline'), cursor="hand2")
+l2.grid(sticky = W, row=9, column=0, columnspan=2)
+l2.bind("<Button-1>", lambda e: webbrowser.open_new("https://steamcommunity.com/tradeoffer/new/?partner=250118937&token=s8eat9SV"))
+b1 = tk.Button(frame_highlights,text="Start!",font=('bold'), command=guardar, height=1, cursor="hand2")
+b1.grid(sticky=W,row=9,column=1)
 
-l18 = tk.Label(frame_highlights,text = "Your SteamID64: ").grid(row=2,column=1)
-ent15=tk.Entry(frame_highlights,font=40,width=5)
-ent15.grid(sticky=W,row=2,column=2)
+l18 = tk.Label(frame_highlights,text = "Your SteamID64: ",justify=LEFT, anchor="w").grid(row=4,column=0,sticky = W)
+ent15=tk.Entry(frame_highlights,font=40,width=17)
+ent15.grid(sticky=W,row=4,column=0, padx=150)
 ent15.insert(END, vars["steamid"])
-l5 = tk.Label(frame_highlights,text = "Start Recording hotkey: ").grid(row=3,column=1)
+l5 = tk.Label(frame_highlights,text = "Start Recording hotkey: ",justify=LEFT, anchor="w").grid(row=2,column=0,sticky = W)
 ent1=tk.Entry(frame_highlights,font=40,width=5)
-ent1.grid(sticky=W,row=3,column=2)
+ent1.grid(sticky=W,row=2,column=0, padx=150)
 ent1.insert(END, vars["start_hotkey"])
-l6 = tk.Label(frame_highlights,text = "Stop Recording hotkey: ").grid(row=4,column=1)
+l6 = tk.Label(frame_highlights,text = "Stop Recording hotkey: ",justify=LEFT, anchor="w").grid(row=3,column=0,sticky = W)
 ent2=tk.Entry(frame_highlights,font=40,width=5)
-ent2.grid(sticky=W,row=4,column=2)
+ent2.grid(sticky=W,row=3,column=0, padx=150)
 ent2.insert(END, vars["stop_hotkey"])
 
-l7 = tk.Label(frame_highlights,text = "CSGO Recordings folder: ").grid(row=5,column=1)
-ent3=tk.Entry(frame_highlights,font=40,width=5)
-ent3.grid(sticky=W,row=5,column=2)
+l7 = tk.Label(frame_highlights,text = "CSGO Recordings folder: ",justify=LEFT, anchor="w").grid(row=5,column=0,sticky = W)
+ent3=tk.Entry(frame_highlights,font=40,width=17)
+ent3.grid(sticky=W,row=5,column=0, padx=150 ,columnspan=2)
 ent3.insert(END, vars["recordings_path"])
-b2=tk.Button(frame_highlights,text="Search",command=get_recordings_path)
-b2.grid(sticky=W,row=5,column=2,padx=80)
+b2=tk.Button(frame_highlights,text="Search",command=get_recordings_path, cursor="hand2")
+b2.grid(sticky=W,row=5,column=1)
 
 #-------------Expandable Pane
 # Creating Object of Collapsible Pane Container 
 cpane = CollapsiblePane(frame_highlights, 'Hide Advanced Settings', 'Show Advanced Settings') 
-cpane.grid(row = 6, column = 1) 
+cpane.grid(row = 6, column = 0,sticky = W) 
 
 # appear in collapsible pane container 
 l8 = tk.Label(cpane.frame,text = "Maximum Double kill duration: ").grid(sticky=W,row=1,column=1)
@@ -340,7 +340,7 @@ cb4 = Checkbutton(cpane.frame, text ="Save every kill",variable=cb4_value)
 cb4.grid(sticky=W,row = 9, column = 1)
 if vars["save_every_frag"]:
     cb4.toggle()
-b3 = tk.Button(cpane.frame,text="Reset", command=reset_settings, height=1)
+b3 = tk.Button(cpane.frame,text="Reset", command=reset_settings, height=1, cursor="hand2")
 b3.grid(sticky=W,row=10,column=1)
 
 
