@@ -23,6 +23,12 @@ vars = {
    "input_4k_time":20,
    "input_5k_time":30,
    "recordings_path":"",
+   "default_delay_after":3,
+   "default_delay_before":5,
+   "default_input_2k_time":12,
+   "default_input_3k_time":15,
+   "default_input_4k_time":20,
+   "default_input_5k_time":30,
 }
 
 try:
@@ -210,12 +216,12 @@ def reset_settings():
     ent7.delete(0, "end")
     ent8.delete(0, "end")
     ent9.delete(0, "end")
-    ent4.insert(END, 10)
-    ent5.insert(END, 20)
-    ent6.insert(END, 30)
-    ent7.insert(END, 45)
-    ent8.insert(END, 5)
-    ent9.insert(END, 3)
+    ent4.insert(END, vars["default_input_2k_time"])
+    ent5.insert(END, vars["default_input_3k_time"])
+    ent6.insert(END, vars["default_input_4k_time"])
+    ent7.insert(END, vars["default_input_5k_time"])
+    ent8.insert(END, vars["default_delay_before"])
+    ent9.insert(END, vars["default_delay_after"])
     tickbox_state = cb1_value.get()
     while tickbox_state == 1:
         cb1.toggle()

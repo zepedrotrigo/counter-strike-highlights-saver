@@ -47,6 +47,9 @@ epoch_timestamps = collections.OrderedDict()
 timestamps = []
 file_prefixes = []
 
+os.system('cls')
+os.system('python tkinter_interface.py') #call tkinter interface here
+
 try:
     path = os.path.dirname(os.path.abspath(__file__)) + "_user_config.pkl"
 
@@ -437,7 +440,6 @@ def process_clips():
 def my_logic(round_phase, round_kills, player_steamid, map_phase, bomb_state):
     global vars, epoch_timestamps, timestamps, file_prefixes
     if map_phase == "live":
-        print(vars["input_2k_time"])
         if round_phase == "live":
             start_recording(vars["start_hotkey"])  
             vars["endround_music_playing"] = False
@@ -570,8 +572,6 @@ class MyRequestHandler(BaseHTTPRequestHandler):
 
 #---------------------------------------------------------MAIN---------------------------------------------------------------
 win32api.SetConsoleCtrlHandler(on_exit, True)
-os.system('cls')
-os.system('python tkinter_interface.py') #call tkinter interface here
 
 server = MyServer(('localhost', 3000), 'MYTOKENHERE', MyRequestHandler)
 os.system('cls')
