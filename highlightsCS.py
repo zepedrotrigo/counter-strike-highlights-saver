@@ -4,6 +4,16 @@ from obswebsocket import obsws, requests
 from pathlib import Path
 from fortnyce_ffmpeg import extract_subclip, concatenate_videoclips
 
+clips = []
+f1 = open("config.cfg", 'r')
+lines = f1.readlines()
+f1.close()
+
+RECORDING_START_TIME = ROUND_KILLS = T1 = T2 = T3 = T4 = T5 = PROCESSED = SAVED_ROUND = RECORDING = 0
+ROUND = 1
+for line in lines: # locals()["var1"] = 1 -> var1 = 1
+    locals()[line.split()[0].upper()] = line.split()[1].replace('"','') # STEAMID, RECORDINGS_PATH, DELETE_RECORDING, SAVE_EVERY_FRAG, CREATE_MOVIE, DELAY_AFTER, DELAY_BEFORE, MAX_2K_TIME, MAX_3K_TIME, MAX_4K_TIME, MAX_5K_TIME
+
 #----------------------------------------------------Classes--------------------------------------------------------------------
 class MyServer(HTTPServer):
     def __init__(self, server_address, token, RequestHandler):
@@ -14,7 +24,6 @@ class MyServer(HTTPServer):
         # You can store states over multiple requests in the server 
         self.round_phase = None
 
-
 class MyRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         length = int(self.headers['Content-Length'])
@@ -23,7 +32,7 @@ class MyRequestHandler(BaseHTTPRequestHandler):
         self.parse_payload(json.loads(body))
 
         self.send_header('Content-type', 'text/html')
-        self.send_response(200)
+        #self.send_response(200)
         self.end_headers()
 
     def is_payload_authentic(self, payload):
@@ -74,7 +83,7 @@ class MyRequestHandler(BaseHTTPRequestHandler):
             return None
 
 class Clip:
-    global DELAY_BEFORE, DELAY_AFTER, RECORDING_START_TIME
+    global DELAY_BEFORE, DELAY_AFTER, RECORDING_START_TIME, ROUND
 
     def __init__(self, start_time, end_time, sufix, round=ROUND):
         self.start_time = (start_time - DELAY_BEFORE) - RECORDING_START_TIME
@@ -309,16 +318,6 @@ def my_logic(round_phase, round_kills, player_steamid, map_phase):
         process_clips()
 
 try:
-    clips = []
-    f1 = open("config.cfg", 'r')
-    lines = f1.readlines()
-    f1.close()
-
-    RECORDING_START_TIME = ROUND_KILLS = T1 = T2 = T3 = T4 = T5 = PROCESSED = SAVED_ROUND = RECORDING = 0
-    ROUND = 1
-    for line in lines: # locals()["var1"] = 1 -> var1 = 1
-        locals()[line.split()[0].upper()] = line.split()[1] # STEAMID, RECORDINGS_PATH, DELETE_RECORDING, SAVE_EVERY_FRAG, CREATE_MOVIE, DELAY_AFTER, DELAY_BEFORE, MAX_2K_TIME, MAX_3K_TIME, MAX_4K_TIME, MAX_5K_TIME
-
     ws = obsws("localhost", 4444, "secret")
     ws.connect()
     server = MyServer(('localhost', 3000), 'MYTOKENHERE', MyRequestHandler)
