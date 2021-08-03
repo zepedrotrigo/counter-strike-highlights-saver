@@ -9,10 +9,13 @@ f1 = open("config.cfg", 'r')
 lines = f1.readlines()
 f1.close()
 
-RECORDING_START_TIME = ROUND_KILLS = T1 = T2 = T3 = T4 = T5 = PROCESSED = SAVED_ROUND = RECORDING = 0
+RECORDING_START_TIME = ROUND_KILLS = T1 = T2 = T3 = T4 = T5 = SAVED_ROUND = RECORDING = 0
 ROUND = 1
 for line in lines: # locals()["var1"] = 1 -> var1 = 1
-    locals()[line.split()[0].upper()] = line.split()[1].replace('"','') # STEAMID, RECORDINGS_PATH, DELETE_RECORDING, SAVE_EVERY_FRAG, CREATE_MOVIE, DELAY_AFTER, DELAY_BEFORE, MAX_2K_TIME, MAX_3K_TIME, MAX_4K_TIME, MAX_5K_TIME
+    var = line.split()[0].upper()
+    val = line.split()[1]
+    val = int(val) if val.isnumeric() else val.replace('"','')
+    locals()[var] = val # STEAMID, RECORDINGS_PATH, DELETE_RECORDING, SAVE_EVERY_FRAG, CREATE_MOVIE, DELAY_AFTER, DELAY_BEFORE, MAX_2K_TIME, MAX_3K_TIME, MAX_4K_TIME, MAX_5K_TIME
 
 #----------------------------------------------------Classes--------------------------------------------------------------------
 class MyServer(HTTPServer):
@@ -85,26 +88,31 @@ class MyRequestHandler(BaseHTTPRequestHandler):
 class Clip:
     global DELAY_BEFORE, DELAY_AFTER, RECORDING_START_TIME, ROUND
 
-    def __init__(self, start_time, end_time, sufix, round=ROUND):
+    def __init__(self, start_time, end_time, sufix, round=str(ROUND)):
         self.start_time = (start_time - DELAY_BEFORE) - RECORDING_START_TIME
         self.end_time = (end_time + DELAY_AFTER) - RECORDING_START_TIME
         self.name = "clip"+round+sufix
 
 
 def start_recording():
-    global RECORDING_START_TIME
+    global RECORDING_START_TIME, RECORDING
 
     ws.call(requests.StartRecording())
+    RECORDING = 1
     RECORDING_START_TIME = time.time()
 
+
 def stop_recording():
+    global RECORDING
+
     ws.call(requests.StopRecording())
+    RECORDING = 0
 
 def listen_to_kills(round_kills):
     global ROUND_KILLS, T1, T2, T3, T4, T5
 
     if round_kills != ROUND_KILLS:
-        locals()["T"+str(round_kills)] = time.time() # locals()["var1"] = 1 -> var1 = 1
+        globals()["T"+str(round_kills)] = time.time() # globals()["var1"] = 1 -> var1 = 1
         ROUND_KILLS = round_kills
 
 def detect_highlights():
@@ -256,21 +264,19 @@ def detect_highlights():
                 clips.append(Clip(T5, T5, ""))
 
 def save_round(player_steamid, round_kills):
-    global T1, T2, T3, T4, T5, STEAMID, RECORDING_START_TIME, PROCESSED, SAVED_ROUND, epoch_timestamps, timestamps
+    global T1, T2, T3, T4, T5, STEAMID, RECORDING_START_TIME, epoch_timestamps, timestamps
 
     if player_steamid == STEAMID: # needs to be here in case of last frag of the round
         listen_to_kills(round_kills)
 
     detect_highlights() # Check for highlights and save them (the timestamps) in an ordered dict
 
-    T1, T2, T3, T4, T5, PROCESSED = 0
-    SAVED_ROUND = 1
+    T1 = T2 = T3 = T4 = T5 = 0
 
 def process_clips():  
-    global DELETE_RECORDING, RECORDINGS_PATH, CREATE_MOVIE, PROCESSED, clips
+    global DELETE_RECORDING, RECORDINGS_PATH, CREATE_MOVIE, clips
 
-
-    if len(os.listdir(RECORDINGS_PATH)) and len(clips):
+    if len(clips):
         recording = str(sorted(Path(RECORDINGS_PATH).iterdir(), key=(os.path.getmtime))[-1])
         dest_folder = RECORDINGS_PATH+"\\"+(time.strftime("%d%b%Y_%Hh%Mmin")) #Create a new folder
         os.mkdir(dest_folder)
@@ -293,10 +299,8 @@ def process_clips():
             concatenate_videoclips("concat_clips.txt",dest_folder)
             os.remove("concat_clips.txt")
 
-        PROCESSED = True
-
 def my_logic(round_phase, round_kills, player_steamid, map_phase):
-    global SAVED_ROUND, PROCESSED, RECORDING, ROUND, STEAMID
+    global SAVED_ROUND, RECORDING, ROUND, STEAMID
     if map_phase == "live":
         if round_phase == "live":
             if not RECORDING:
@@ -305,17 +309,19 @@ def my_logic(round_phase, round_kills, player_steamid, map_phase):
             if player_steamid==STEAMID and round_kills: # if alive
                 listen_to_kills(round_kills)
 
-            SAVED_ROUND = False
+            SAVED_ROUND = 0
 
         elif round_phase == "over" and not SAVED_ROUND and round_kills:
             save_round(player_steamid, round_kills)
+            SAVED_ROUND = 1
             ROUND += 1
 
-    elif not PROCESSED and map_phase == None:
+    elif map_phase == None and ROUND != 1:
         if RECORDING:
             stop_recording()
 
         process_clips()
+        ROUND = 1
 
 try:
     ws = obsws("localhost", 4444, "secret")
