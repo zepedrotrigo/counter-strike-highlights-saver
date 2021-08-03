@@ -296,13 +296,13 @@ def process_clips():
         PROCESSED = True
 
 def my_logic(round_phase, round_kills, player_steamid, map_phase):
-    global SAVED_ROUND, PROCESSED, RECORDING, ROUND
+    global SAVED_ROUND, PROCESSED, RECORDING, ROUND, STEAMID
     if map_phase == "live":
         if round_phase == "live":
             if not RECORDING:
                 start_recording()  
 
-            if player_steamid==vars["steamid"] and round_kills: # if alive
+            if player_steamid==STEAMID and round_kills: # if alive
                 listen_to_kills(round_kills)
 
             SAVED_ROUND = False
