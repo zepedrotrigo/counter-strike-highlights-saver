@@ -98,7 +98,7 @@ def convert_path_to_string(varnames):
 
 @convert_path_to_string(("inputfile", "outputfile"))
 def extract_subclip(
-    inputfile, start_time, end_time,recordings_path, name, outputfile=None, logger="bar"
+    inputfile, recordings_path, name, start_time, end_time, outputfile=None, logger="bar"
 ):
     """Makes a new video file playing video file ``inputfile`` between
     the times ``start_time`` and ``end_time``."""
@@ -141,5 +141,3 @@ def concatenate_videoclips(txt_file, recordings_path,logger="bar"):
         output,
     ]
     subprocess_call(cmd, logger=logger)
-
-#concatenate_videoclips("C:\\Users\\fortnyce\\Videos\\Counter-strike  Global Offensive\\concat_clips.txt", "C:\\Users\\fortnyce\\Videos\\Counter-strike  Global Offensive")

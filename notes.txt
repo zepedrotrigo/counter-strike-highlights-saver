@@ -1,0 +1,1 @@
+pyinstaller --name "highlightsCS by Fortnyce" --onefile highlightsCS.py
