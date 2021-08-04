@@ -86,12 +86,15 @@ class MyRequestHandler(BaseHTTPRequestHandler):
             return None
 
 class Clip:
-    global DELAY_BEFORE, DELAY_AFTER, RECORDING_START_TIME, ROUND
+    global DELAY_BEFORE, DELAY_AFTER, RECORDING_START_TIME
 
-    def __init__(self, start_time, end_time, sufix, round=str(ROUND)):
+    def __init__(self, start_time, end_time, round, sufix):
         self.start_time = (start_time - DELAY_BEFORE) - RECORDING_START_TIME
         self.end_time = (end_time + DELAY_AFTER) - RECORDING_START_TIME
-        self.name = "clip"+round+sufix
+        self.name = "clip"+str(round)+sufix
+
+    def __str__(self) -> str:
+        return f"Name: {self.name} Start: {self.start_time:.2f} End: {self.end_time:.2f}"
 
 
 def start_recording():
@@ -115,161 +118,40 @@ def listen_to_kills(round_kills):
         globals()["T"+str(round_kills)] = time.time() # globals()["var1"] = 1 -> var1 = 1
         ROUND_KILLS = round_kills
 
-def detect_highlights():
-    global SAVE_EVERY_FRAG, MAX_2K_TIME, MAX_3K_TIME, MAX_4K_TIME, MAX_5K_TIME, T1, T2, T3, T4, T5, clips
 
-    if (T5 - T1 < MAX_5K_TIME) and T5: # check if Penta kill
-        clips.append(Clip(T5, T1, "_5k"))
+def detect_highlights(clips, lst, times, save_every_frag, round):
+	ignore = []
+	clips_sorted = {} # they key of this dict preservers the order of the clips
 
-    elif (T5 - T2 < MAX_4K_TIME) and T5: # check if quadra kill (case 5-2)
-        if SAVE_EVERY_FRAG and T1 != 0:
-            clips.append(Clip(T1, T1, ""))
+	if len(lst) > 1:
+		for l in reversed(range(len(lst))):
+			if l in ignore: continue
 
-        clips.append(Clip(T5, T2, "_4k"))
+			for f in range(l):
+				if f in ignore: continue
 
-    elif (T4 - T1 < MAX_4K_TIME) and T4: # check if quadra kill (case 4-1)
-        clips.append(Clip(T4, T1, "_4k"))
+				if (lst[l] - lst[f] < times[l]) and lst[l] and l:
+					elements = list(range(f, l+1))
+					ignore += elements
+					clips_sorted[f] = Clip(lst[f],lst[l], round, f"_{len(elements)}k") # they key of this dict preservers the order of the clips
 
-        if SAVE_EVERY_FRAG and T5:
-            clips.append(Clip(T5, T5, ""))
+	if save_every_frag:
+		for i in range(len(lst)):
+			if i not in ignore:
+				clips_sorted[i] = Clip(lst[i],lst[i], round, "") # they key of this dict preservers the order of the clips
 
-    elif (T5 - T3 < MAX_3K_TIME) and T5: # check if triple kill (case 5-3)
-        if (T2 - T1 < MAX_2K_TIME) and T2: # triple kill (case 5-3) and double kill (case 2-1)
-            clips.append(Clip(T2, T1, "_2k"))
-            clips.append(Clip(T5, T3, "_3k"))
+	for k in sorted(clips_sorted): # append to clips by kill order
+		clips.append(clips_sorted[k])
 
-        else: # save triple kill
-            if SAVE_EVERY_FRAG:
-                if T1:
-                    clips.append(Clip(T1, T1, ""))
-                if T2:
-                    clips.append(Clip(T2, T2, ""))
-
-            clips.append(Clip(T5, T3, "_3k"))
-
-    elif (T4 - T2 < MAX_3K_TIME) and T4: #check if triple kill (case 4-2)
-        if SAVE_EVERY_FRAG:
-            if T1:
-                clips.append(Clip(T1, T1, ""))
-
-        clips.append(Clip(T4, T2, "_3k"))
-
-        if SAVE_EVERY_FRAG:
-            if T5:
-                clips.append(Clip(T5, T5, ""))
-
-    elif (T3 - T1 < MAX_3K_TIME) and T3: #check if triple kill (case 3-1)
-        if (T5 - T4 < MAX_2K_TIME) and T5: #triple kill(3-1) amd double kill(5-4)
-            clips.append(Clip(T3, T1, "_3k"))
-            clips.append(Clip(T5, T4, "_2k"))
-
-        else:
-            clips.append(Clip(T3, T1, "_3k"))
-
-            if SAVE_EVERY_FRAG:
-                if T4:
-                    clips.append(Clip(T4, T4, ""))
-                if T5:
-                    clips.append(Clip(T5, T5, ""))
-
-    elif ( (T2 - T1 < MAX_2K_TIME) and T2 and # double kill case(2-1) AND
-            (T4 - T3 < MAX_2K_TIME) and T4 ): # double kill case (4-3)
-            clips.append(Clip(T2, T1, "_2k"))
-            clips.append(Clip(T4, T3, "_2k"))
-
-            if SAVE_EVERY_FRAG:
-                if T5:
-                    clips.append(Clip(T5, T5, ""))
-
-    elif ( (T2 - T1 < MAX_2K_TIME) and T2 and #double kill case(2-1) AND
-            (T5 - T4 < MAX_2K_TIME) and T5 ): # double kill case (5-4)
-            clips.append(Clip(T2, T1, "_2k"))
-            clips.append(Clip(T5, T4, "_2k"))
-
-            if SAVE_EVERY_FRAG:
-                if T5:
-                    clips.append(Clip(T5, T5, ""))
-
-    elif ( (T3 - T2 < MAX_2K_TIME) and T3 and #double kill case(3-2) AND
-            (T5 - T4 < MAX_2K_TIME) and T5 ): #double kill case (5-4)
-            clips.append(Clip(T3, T2, "_2k"))
-            clips.append(Clip(T5, T4, "_2k"))
-
-            if SAVE_EVERY_FRAG:
-                if T5:
-                    clips.append(Clip(T5, T5, ""))
-
-    elif (T2 - T1 < MAX_2K_TIME) and T2: #double kill case(2-1)
-        clips.append(Clip(T2, T1, "_2k"))
-
-        if SAVE_EVERY_FRAG:
-            if T3:
-                clips.append(Clip(T3, T3, ""))
-            if T4:
-                clips.append(Clip(T4, T4, ""))
-            if T5:
-                clips.append(Clip(T5, T5, ""))
-
-    elif (T3 - T2 < MAX_2K_TIME) and T3: #double kill case (3-2)
-        if SAVE_EVERY_FRAG:
-            if T1:
-                clips.append(Clip(T1, T1, ""))
-
-        clips.append(Clip(T3, T2, "_2k"))
-
-        if SAVE_EVERY_FRAG:
-            if T4:
-                clips.append(Clip(T4, T4, ""))
-            if T5:
-                clips.append(Clip(T5, T5, ""))
-
-    elif (T4 - T3 < MAX_2K_TIME) and T4: #double kill case (4-3)
-        if SAVE_EVERY_FRAG:
-            if T1:
-                clips.append(Clip(T1, T1, ""))
-            if T2:
-                clips.append(Clip(T2, T2, ""))
-
-        clips.append(Clip(T4, T3, "_2k"))
-
-        if SAVE_EVERY_FRAG and T5:
-            clips.append(Clip(T5, T5, ""))
-
-    elif (T5 - T4 < MAX_2K_TIME) and T5: #double kill case (5-4)
-        if SAVE_EVERY_FRAG:
-            if T1:
-                clips.append(Clip(T1, T1, ""))
-            if T2:
-                clips.append(Clip(T2, T2, ""))
-            if T3:
-                clips.append(Clip(T3, T3, ""))
-
-        clips.append(Clip(T5, T4, "_2k"))
-
-        if SAVE_EVERY_FRAG:
-            if T5:
-                clips.append(Clip(T5, T5, ""))
-
-    else: # no highlight detected
-        if SAVE_EVERY_FRAG:
-            if T1:
-                clips.append(Clip(T1, T1, ""))
-            if T2:
-                clips.append(Clip(T2, T2, ""))
-            if T3:
-                clips.append(Clip(T3, T3, ""))
-            if T4:
-                clips.append(Clip(T4, T4, ""))
-            if T5:
-                clips.append(Clip(T5, T5, ""))
+	return clips
 
 def save_round(player_steamid, round_kills):
-    global T1, T2, T3, T4, T5, STEAMID, RECORDING_START_TIME, epoch_timestamps, timestamps
+    global T1, T2, T3, T4, T5, STEAMID, RECORDING_START_TIME, epoch_timestamps, timestamps, clips, SAVE_EVERY_FRAG, ROUND
 
     if player_steamid == STEAMID: # needs to be here in case of last frag of the round
         listen_to_kills(round_kills)
 
-    detect_highlights() # Check for highlights and save them (the timestamps) in an ordered dict
+    clips = detect_highlights(clips, [T1,T2,T3,T4,T5], [0,MAX_2K_TIME,MAX_3K_TIME,MAX_4K_TIME,MAX_5K_TIME], SAVE_EVERY_FRAG, ROUND) # Check for highlights and save them in a list of Clips
 
     T1 = T2 = T3 = T4 = T5 = 0
 
