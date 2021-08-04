@@ -86,14 +86,13 @@ class MyRequestHandler(BaseHTTPRequestHandler):
             return None
 
 class Clip:
-    def __init__(self, start_time, end_time, round, sufix):
+    def __init__(self, start_time, end_time, clip_counter, sufix):
         self.start_time = (start_time - DELAY_BEFORE) - RECORDING_START_TIME
         self.end_time = (end_time + DELAY_AFTER) - RECORDING_START_TIME
-        self.name = "clip"+str(round)+sufix
+        self.name = "clip"+str(clip_counter)+sufix
 
     def __str__(self) -> str:
         return f"Name: {self.name} Start: {self.start_time:.2f} End: {self.end_time:.2f}"
-
 
 def start_recording():
     ws.call(requests.StartRecording())
@@ -131,7 +130,7 @@ def detect_highlights(clips, kill_times, max_times, save_every_frag):
 
     if save_every_frag:
         for i in range(len(kill_times)):
-            if i not in ignore:
+            if i not in ignore and kill_times[i] != 0:
                 clips_sorted[i] = Clip(kill_times[i],kill_times[i], CLIP_COUNTER, "") # they key of this dict preservers the order of the clips
                 CLIP_COUNTER += 1
 
@@ -153,11 +152,11 @@ def process_clips(clips, delete_recording, recordings_path, create_movie):
             os.remove(recording)
 
         if create_movie:
-            clip_paths = sorted(Path(dest_folder).iterdir(), key=(os.path.getmtime))
+            clip_paths = sorted(Path(dest_folder).iterdir())
             f = open("concat_clips.txt", "w")
 
-            for n in range(0, len(clips)):
-                f.write("file '"  + str(clip_paths[-n-1]) + "'\n")
+            for n in range(len(clips)):
+                f.write("file '"  + str(clip_paths[n]) + "'\n")
 
             f.close()
 
@@ -193,6 +192,7 @@ def my_logic(round_phase, round_kills, player_steamid, map_phase):
             RECORDING = 0
 
         process_clips(clips, DELETE_RECORDING, RECORDINGS_PATH, CREATE_MOVIE)
+        clips = []
         CLIP_COUNTER = 1
 
 try:
