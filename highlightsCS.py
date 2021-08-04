@@ -107,6 +107,7 @@ def listen_to_kills(round_kills, prev_val):
 
     if round_kills != prev_val:
         globals()["T"+str(round_kills)] = time.time() # globals()["T"+"1"] = 123 -> T1 = 123
+        prev_val += 1
     
     return prev_val
 
@@ -183,7 +184,7 @@ def my_logic(round_phase, round_kills, player_steamid, map_phase):
                 listen_to_kills(round_kills, ROUND_KILLS) # ROUND_KILLS is the prev value to see if it was evaluated already or not
             
             clips = detect_highlights(clips, [T1,T2,T3,T4,T5], [0,MAX_2K_TIME,MAX_3K_TIME,MAX_4K_TIME,MAX_5K_TIME], SAVE_EVERY_FRAG)
-            T1 = T2 = T3 = T4 = T5 = 0
+            T1 = T2 = T3 = T4 = T5 = ROUND_KILLS = 0
             SAVED_ROUND = 1
 
     elif map_phase == None and CLIP_COUNTER != 1:
