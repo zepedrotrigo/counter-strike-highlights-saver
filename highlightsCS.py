@@ -10,7 +10,7 @@ lines = f1.readlines()
 f1.close()
 
 RECORDING_START_TIME = ROUND_KILLS = T1 = T2 = T3 = T4 = T5 = SAVED_ROUND = RECORDING = 0
-ROUND = 1
+CLIP_COUNTER = 1
 for line in lines: # locals()["var1"] = 1 -> var1 = 1
     var = line.split()[0].upper()
     val = line.split()[1]
@@ -111,31 +111,34 @@ def listen_to_kills(round_kills, prev_val):
     
     return prev_val
 
-def detect_highlights(clips, kill_times, max_times, save_every_frag, round):
-	ignore = []
-	clips_sorted = {} # they key of this dict preservers the order of the clips
+def detect_highlights(clips, kill_times, max_times, save_every_frag):
+    global CLIP_COUNTER
+    ignore = []
+    clips_sorted = {} # they key of this dict preservers the order of the clips
 
-	if len(kill_times) > 1:
-		for l in reversed(range(len(kill_times))):
-			if l in ignore: continue
+    if len(kill_times) > 1:
+        for l in reversed(range(len(kill_times))):
+            if l in ignore: continue
 
-			for f in range(l):
-				if f in ignore: continue
+            for f in range(l):
+                if f in ignore: continue
 
-				if (kill_times[l] - kill_times[f] < max_times[l]) and kill_times[l] and l:
-					elements = list(range(f, l+1))
-					ignore += elements
-					clips_sorted[f] = Clip(kill_times[f],kill_times[l], round, f"_{len(elements)}k") # they key of this dict preservers the order of the clips
+                if (kill_times[l] - kill_times[f] < max_times[l]) and kill_times[l] and l:
+                    elements = list(range(f, l+1))
+                    ignore += elements
+                    clips_sorted[f] = Clip(kill_times[f],kill_times[l], CLIP_COUNTER, f"_{len(elements)}k") # they key of this dict preservers the order of the clips
+                    CLIP_COUNTER += 1
 
-	if save_every_frag:
-		for i in range(len(kill_times)):
-			if i not in ignore:
-				clips_sorted[i] = Clip(kill_times[i],kill_times[i], round, "") # they key of this dict preservers the order of the clips
+    if save_every_frag:
+        for i in range(len(kill_times)):
+            if i not in ignore:
+                clips_sorted[i] = Clip(kill_times[i],kill_times[i], CLIP_COUNTER, "") # they key of this dict preservers the order of the clips
+                CLIP_COUNTER += 1
 
-	for k in sorted(clips_sorted): # append to clips by kill order
-		clips.append(clips_sorted[k])
+    for k in sorted(clips_sorted): # append to clips by kill order
+        clips.append(clips_sorted[k])
 
-	return clips
+    return clips
 
 def process_clips(clips, delete_recording, recordings_path, create_movie):  
     if len(clips):
@@ -162,7 +165,7 @@ def process_clips(clips, delete_recording, recordings_path, create_movie):
             os.remove("concat_clips.txt")
 
 def my_logic(round_phase, round_kills, player_steamid, map_phase):
-    global clips, SAVED_ROUND, RECORDING, RECORDING_START_TIME, ROUND, STEAMID, ROUND_KILLS, SAVE_EVERY_FRAG, DELETE_RECORDING, RECORDINGS_PATH, CREATE_MOVIE
+    global clips, SAVED_ROUND, RECORDING, RECORDING_START_TIME, CLIP_COUNTER, STEAMID, ROUND_KILLS, SAVE_EVERY_FRAG, DELETE_RECORDING, RECORDINGS_PATH, CREATE_MOVIE
     global T1, T2, T3, T4, T5, MAX_2K_TIME, MAX_3K_TIME, MAX_4K_TIME, MAX_5K_TIME
 
     if map_phase == "live":
@@ -180,18 +183,17 @@ def my_logic(round_phase, round_kills, player_steamid, map_phase):
             if STEAMID == player_steamid: # needs to be here in case of last frag of the round
                 listen_to_kills(round_kills, ROUND_KILLS) # ROUND_KILLS is the prev value to see if it was evaluated already or not
             
-            clips = detect_highlights(clips, [T1,T2,T3,T4,T5], [0,MAX_2K_TIME,MAX_3K_TIME,MAX_4K_TIME,MAX_5K_TIME], SAVE_EVERY_FRAG, ROUND)
+            clips = detect_highlights(clips, [T1,T2,T3,T4,T5], [0,MAX_2K_TIME,MAX_3K_TIME,MAX_4K_TIME,MAX_5K_TIME], SAVE_EVERY_FRAG)
             T1 = T2 = T3 = T4 = T5 = 0
             SAVED_ROUND = 1
-            ROUND += 1
 
-    elif map_phase == None and ROUND != 1:
+    elif map_phase == None and CLIP_COUNTER != 1:
         if RECORDING:
             stop_recording()
             RECORDING = 0
 
         process_clips(clips, DELETE_RECORDING, RECORDINGS_PATH, CREATE_MOVIE)
-        ROUND = 1
+        CLIP_COUNTER = 1
 
 try:
     ws = obsws("localhost", 4444, "secret")
