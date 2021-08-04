@@ -86,8 +86,6 @@ class MyRequestHandler(BaseHTTPRequestHandler):
             return None
 
 class Clip:
-    global DELAY_BEFORE, DELAY_AFTER, RECORDING_START_TIME
-
     def __init__(self, start_time, end_time, round, sufix):
         self.start_time = (start_time - DELAY_BEFORE) - RECORDING_START_TIME
         self.end_time = (end_time + DELAY_AFTER) - RECORDING_START_TIME
@@ -98,78 +96,60 @@ class Clip:
 
 
 def start_recording():
-    global RECORDING_START_TIME, RECORDING
-
     ws.call(requests.StartRecording())
-    RECORDING = 1
-    RECORDING_START_TIME = time.time()
+    return time.time()
 
 
 def stop_recording():
-    global RECORDING
-
     ws.call(requests.StopRecording())
-    RECORDING = 0
 
-def listen_to_kills(round_kills):
-    global ROUND_KILLS, T1, T2, T3, T4, T5
+def listen_to_kills(round_kills, prev_val):
+    global T1, T2, T3, T4, T5
 
-    if round_kills != ROUND_KILLS:
-        globals()["T"+str(round_kills)] = time.time() # globals()["var1"] = 1 -> var1 = 1
-        ROUND_KILLS = round_kills
+    if round_kills != prev_val:
+        globals()["T"+str(round_kills)] = time.time() # globals()["T"+"1"] = 123 -> T1 = 123
+    
+    return prev_val
 
-
-def detect_highlights(clips, lst, times, save_every_frag, round):
+def detect_highlights(clips, kill_times, max_times, save_every_frag, round):
 	ignore = []
 	clips_sorted = {} # they key of this dict preservers the order of the clips
 
-	if len(lst) > 1:
-		for l in reversed(range(len(lst))):
+	if len(kill_times) > 1:
+		for l in reversed(range(len(kill_times))):
 			if l in ignore: continue
 
 			for f in range(l):
 				if f in ignore: continue
 
-				if (lst[l] - lst[f] < times[l]) and lst[l] and l:
+				if (kill_times[l] - kill_times[f] < max_times[l]) and kill_times[l] and l:
 					elements = list(range(f, l+1))
 					ignore += elements
-					clips_sorted[f] = Clip(lst[f],lst[l], round, f"_{len(elements)}k") # they key of this dict preservers the order of the clips
+					clips_sorted[f] = Clip(kill_times[f],kill_times[l], round, f"_{len(elements)}k") # they key of this dict preservers the order of the clips
 
 	if save_every_frag:
-		for i in range(len(lst)):
+		for i in range(len(kill_times)):
 			if i not in ignore:
-				clips_sorted[i] = Clip(lst[i],lst[i], round, "") # they key of this dict preservers the order of the clips
+				clips_sorted[i] = Clip(kill_times[i],kill_times[i], round, "") # they key of this dict preservers the order of the clips
 
 	for k in sorted(clips_sorted): # append to clips by kill order
 		clips.append(clips_sorted[k])
 
 	return clips
 
-def save_round(player_steamid, round_kills):
-    global T1, T2, T3, T4, T5, STEAMID, RECORDING_START_TIME, epoch_timestamps, timestamps, clips, SAVE_EVERY_FRAG, ROUND
-
-    if player_steamid == STEAMID: # needs to be here in case of last frag of the round
-        listen_to_kills(round_kills)
-
-    clips = detect_highlights(clips, [T1,T2,T3,T4,T5], [0,MAX_2K_TIME,MAX_3K_TIME,MAX_4K_TIME,MAX_5K_TIME], SAVE_EVERY_FRAG, ROUND) # Check for highlights and save them in a list of Clips
-
-    T1 = T2 = T3 = T4 = T5 = 0
-
-def process_clips():  
-    global DELETE_RECORDING, RECORDINGS_PATH, CREATE_MOVIE, clips
-
+def process_clips(clips, delete_recording, recordings_path, create_movie):  
     if len(clips):
-        recording = str(sorted(Path(RECORDINGS_PATH).iterdir(), key=(os.path.getmtime))[-1])
-        dest_folder = RECORDINGS_PATH+"\\"+(time.strftime("%d%b%Y_%Hh%Mmin")) #Create a new folder
+        recording = str(sorted(Path(recordings_path).iterdir(), key=(os.path.getmtime))[-1])
+        dest_folder = recordings_path+"\\"+(time.strftime("%d%b%Y_%Hh%Mmin")) #Create a new folder
         os.mkdir(dest_folder)
 
         for clip in clips:
             extract_subclip(recording, dest_folder, clip.name, clip.start_time, clip.end_time)
 
-        if DELETE_RECORDING:
+        if delete_recording:
             os.remove(recording)
 
-        if CREATE_MOVIE:
+        if create_movie:
             clip_paths = sorted(Path(dest_folder).iterdir(), key=(os.path.getmtime))
             f = open("concat_clips.txt", "w")
 
@@ -182,27 +162,35 @@ def process_clips():
             os.remove("concat_clips.txt")
 
 def my_logic(round_phase, round_kills, player_steamid, map_phase):
-    global SAVED_ROUND, RECORDING, ROUND, STEAMID
+    global clips, SAVED_ROUND, RECORDING, RECORDING_START_TIME, ROUND, STEAMID, ROUND_KILLS, SAVE_EVERY_FRAG, DELETE_RECORDING, RECORDINGS_PATH, CREATE_MOVIE
+    global T1, T2, T3, T4, T5, MAX_2K_TIME, MAX_3K_TIME, MAX_4K_TIME, MAX_5K_TIME
+
     if map_phase == "live":
         if round_phase == "live":
             if not RECORDING:
-                start_recording()  
+                RECORDING_START_TIME = start_recording()
+                RECORDING = 1
 
-            if player_steamid==STEAMID and round_kills: # if alive
-                listen_to_kills(round_kills)
-
+            if player_steamid == STEAMID and round_kills: # if alive
+                ROUND_KILLS = listen_to_kills(round_kills, ROUND_KILLS) # ROUND_KILLS is the prev value to see if it was evaluated already or not
+            
             SAVED_ROUND = 0
 
-        elif round_phase == "over" and not SAVED_ROUND and round_kills:
-            save_round(player_steamid, round_kills)
+        elif round_phase == "over" and not SAVED_ROUND and round_kills:            
+            if STEAMID == player_steamid: # needs to be here in case of last frag of the round
+                listen_to_kills(round_kills, ROUND_KILLS) # ROUND_KILLS is the prev value to see if it was evaluated already or not
+            
+            clips = detect_highlights(clips, [T1,T2,T3,T4,T5], [0,MAX_2K_TIME,MAX_3K_TIME,MAX_4K_TIME,MAX_5K_TIME], SAVE_EVERY_FRAG, ROUND)
+            T1 = T2 = T3 = T4 = T5 = 0
             SAVED_ROUND = 1
             ROUND += 1
 
     elif map_phase == None and ROUND != 1:
         if RECORDING:
             stop_recording()
+            RECORDING = 0
 
-        process_clips()
+        process_clips(clips, DELETE_RECORDING, RECORDINGS_PATH, CREATE_MOVIE)
         ROUND = 1
 
 try:
