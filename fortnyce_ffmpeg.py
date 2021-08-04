@@ -108,18 +108,17 @@ def extract_subclip(
 
     cmd = [
         FFMPEG_BINARY,
-        "-i",
-        inputfile,
+        "-y",
         "-ss",
         "%0.2f" % start_time,
+        "-i",
+        inputfile,
         "-t",
         "%0.2f" % (end_time - start_time),
         "-vcodec",
         "copy",
         "-acodec",
         "copy",
-        "-aspect",
-        "16:9",
         outputfile,
     ]
     subprocess_call(cmd, logger=logger)
