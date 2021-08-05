@@ -1,4 +1,4 @@
-import json, time, os, collections
+import json, time, os
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from obswebsocket import obsws, requests
 from pathlib import Path
@@ -15,7 +15,7 @@ for line in lines: # locals()["var1"] = 1 -> var1 = 1
     var = line.split()[0].upper()
     val = line.split()[1]
     val = int(val) if val.isnumeric() else val.replace('"','')
-    locals()[var] = val # STEAMID, RECORDINGS_PATH, DELETE_RECORDING, SAVE_EVERY_FRAG, CREATE_MOVIE, DELAY_AFTER, DELAY_BEFORE, MAX_2K_TIME, MAX_3K_TIME, MAX_4K_TIME, MAX_5K_TIME
+    locals()[var] = val # STEAMID, DELETE_RECORDING, SAVE_EVERY_FRAG, CREATE_MOVIE, DELAY_AFTER, DELAY_BEFORE, MAX_2K_TIME, MAX_3K_TIME, MAX_4K_TIME, MAX_5K_TIME
 
 #----------------------------------------------------Classes--------------------------------------------------------------------
 class MyServer(HTTPServer):
@@ -123,7 +123,7 @@ def detect_highlights(clips, kill_times, max_times, save_every_frag):
             for f in range(l):
                 if f in ignore: continue
 
-                if (kill_times[l] - kill_times[f] < max_times[l]) and kill_times[l] and l:
+                if (kill_times[l] - kill_times[f] < max_times[l]) and kill_times[l] and l: # "and l" because f != l needs to be true
                     elements = list(range(f, l+1))
                     ignore += elements
                     clips_sorted[f] = Clip(kill_times[f],kill_times[l], CLIP_COUNTER, f"_{len(elements)}k") # they key of this dict preservers the order of the clips
@@ -199,12 +199,14 @@ def my_logic(round_phase, round_kills, player_steamid, map_phase):
 try:
     ws = obsws("localhost", 4444, "secret")
     ws.connect()
+    recording_path = ws.call(requests.GetRecordingFolder())
+    RECORDINGS_PATH = recording_path.datain["rec-folder"]
     server = MyServer(('localhost', 3000), 'MYTOKENHERE', MyRequestHandler)
     server.serve_forever()
 
 except (KeyboardInterrupt, SystemExit):
     if RECORDING:
-        ws.call(requests.StopRecording())
+       stop_recording()
 
     server.server_close()
     ws.disconnect()
