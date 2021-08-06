@@ -18,6 +18,7 @@ try:
     f1.close()
 except FileNotFoundError:
     messagebox.showerror("Error", "config.cfg file not found!")
+    os._exit(1)
 
 RECORDING_START_TIME = ROUND_KILLS = T1 = T2 = T3 = T4 = T5 = SAVED_ROUND = RECORDING = 0
 CLIP_COUNTER = 1
