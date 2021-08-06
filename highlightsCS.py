@@ -90,6 +90,7 @@ class Clip:
         self.start_time = (start_time - DELAY_BEFORE) - RECORDING_START_TIME
         self.end_time = (end_time + DELAY_AFTER) - RECORDING_START_TIME
         self.name = "clip"+str(clip_counter)+sufix
+        self.name = f"clip{clip_counter:02d}{sufix}"
 
     def __str__(self) -> str:
         return f"Name: {self.name} Start: {self.start_time:.2f} End: {self.end_time:.2f}"
