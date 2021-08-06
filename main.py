@@ -1,13 +1,13 @@
-import json, time, os, logging, webbrowser, threading, easygui
+import json, time, os, logging, webbrowser, threading, sys, pystray, ctypes
+from PIL import Image
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from obswebsocket import obsws, requests, exceptions
 from pathlib import Path
-from PyQt5.QtGui import * 
-from PyQt5.QtWidgets import *
 import tkinter
 from tkinter import messagebox
 from utils_ffmpeg import extract_subclip, concatenate_videoclips
 
+ctypes.windll.user32.ShowWindow( ctypes.windll.kernel32.GetConsoleWindow(), 0 ) # hide console
 logging.basicConfig(filename="crashes.txt", filemode="w")
 root = tkinter.Tk()
 root.withdraw()
@@ -21,6 +21,7 @@ except FileNotFoundError:
 
 RECORDING_START_TIME = ROUND_KILLS = T1 = T2 = T3 = T4 = T5 = SAVED_ROUND = RECORDING = 0
 CLIP_COUNTER = 1
+ws = server = None
 clips = []
 for line in lines: # locals()["var1"] = 1 -> var1 = 1
     var = line.split()[0].upper()
@@ -213,12 +214,15 @@ def my_logic(round_phase, round_kills, player_steamid, map_phase):
         clips = []
         CLIP_COUNTER = 1
 
-def close(recording, sock, server):
-    if recording:
+def safe_exit():
+    global RECORDING, ws, server
+
+    if RECORDING:
         stop_recording()
 
     server.server_close()
-    sock.disconnect()
+    ws.disconnect()
+    os._exit(1)
 
 def redirect_github():
     webbrowser.open_new('https://github.com/zepedrotrigo/highlightsCS')
@@ -226,7 +230,30 @@ def redirect_github():
 def redirect_steamprofile():
     webbrowser.open_new('https://steamcommunity.com/id/fortnyce')
 
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
+def tray():
+    # Start main program loop in a daemon thread
+    bg_thread = threading.Thread(target=main, args=[])
+    bg_thread.daemon = True
+    bg_thread.start()
+
+    # Start system tray loop
+    image = Image.open(resource_path("headshot.png"))
+    menu = (pystray.MenuItem('Visit my Github', redirect_github), pystray.MenuItem('+rep my Steam Profile', redirect_steamprofile), pystray.MenuItem('Exit', safe_exit))
+    icon = pystray.Icon("name", image, "highlightsCS by Fortnyce", menu)
+    icon.run()
+
 def main():
+    global ws, server
     try:
         root = tkinter.Tk()
         root.withdraw()
@@ -241,46 +268,9 @@ def main():
         messagebox.showerror("Error", "OBS studio is probably closed!")
         os._exit(1)
     except Exception as e:
-        close(RECORDING, ws, server)
         logging.critical("Exception occurred: ", exc_info=True)
         messagebox.showerror("Error", "Program crashed. Open crashes.txt for detailed information")
-        os._exit(1)
-
-def tray():
-    app = QApplication([])
-    app.setQuitOnLastWindowClosed(False)
-    
-    # Adding an icon
-    icon = QIcon("headshot.png")
-    
-    # Adding item on the menu bar
-    tray = QSystemTrayIcon()
-    tray.setIcon(icon)
-    tray.setVisible(True)
-    tray.setToolTip("highlightsCS by Fortnyce")
-    
-    # Options menu
-    menu = QMenu()
-
-    option1 = QAction("Visit my Github")
-    option1.triggered.connect(redirect_github)
-    menu.addAction(option1)
-
-    option2 = QAction("+rep my Steam Profile")
-    option2.triggered.connect(redirect_steamprofile)
-    menu.addAction(option2)
-
-    quit = QAction("Quit")
-    quit.triggered.connect(exit)
-    menu.addAction(quit)
-    
-    # Adding options to the System Tray
-    tray.setContextMenu(menu)
-
-    bg_thread = threading.Thread(target=main, args=[])
-    bg_thread.daemon = True
-    bg_thread.start()
-    app.exec_()
+        safe_exit()
 
 if __name__ == "__main__":
     tray()

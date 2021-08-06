@@ -1,1 +1,1 @@
-pyinstaller --name "highlightsCS by Fortnyce" --onefile --noconsole highlightsCS.py
+pyinstaller --name "highlightsCS by Fortnyce" --onefile --noconsole main.py
