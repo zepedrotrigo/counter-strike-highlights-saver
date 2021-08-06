@@ -22,7 +22,7 @@ except FileNotFoundError:
 
 RECORDING_START_TIME = ROUND_KILLS = T1 = T2 = T3 = T4 = T5 = SAVED_ROUND = RECORDING = 0
 CLIP_COUNTER = 1
-ws = server = None
+ws = server = RECORDINGS_PATH = None
 clips = []
 for line in lines: # locals()["var1"] = 1 -> var1 = 1
     var = line.split()[0].upper()
@@ -142,8 +142,9 @@ def detect_highlights(clips, kill_times, max_times, save_every_frag):
             for f in range(l):
                 if f in ignore: continue
                 elements = list(range(f, l+1))
+                idx = len(elements) - 1
 
-                if (kill_times[l] - kill_times[f] < max_times[l]) and kill_times[len(elements)] and l: # "and l" because f != l needs to be true
+                if (kill_times[l] - kill_times[f] < max_times[idx]) and kill_times[l] and l: # "and l" because f != l needs to be true
                     ignore += elements
                     clips_sorted[f] = Clip(kill_times[f],kill_times[l], CLIP_COUNTER, f"_{len(elements)}k") # they key of this dict preservers the order of the clips
                     CLIP_COUNTER += 1
@@ -254,7 +255,7 @@ def tray():
     icon.run()
 
 def main():
-    global ws, server
+    global ws, server, RECORDINGS_PATH
     try:
         root = tkinter.Tk()
         root.withdraw()
@@ -268,7 +269,7 @@ def main():
     except (ConnectionRefusedError, exceptions.ConnectionFailure):
         messagebox.showerror("Error", "OBS studio is probably closed!")
         os._exit(1)
-    except Exception as e:
+    except:
         logging.critical("Exception occurred: ", exc_info=True)
         messagebox.showerror("Error", "Program crashed. Open crashes.txt for detailed information")
         safe_exit()
