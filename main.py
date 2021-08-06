@@ -1,22 +1,38 @@
-import json, time, os
+import json, time, os, logging, webbrowser, threading, easygui
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from obswebsocket import obsws, requests
+from obswebsocket import obsws, requests, exceptions
 from pathlib import Path
-from fortnyce_ffmpeg import extract_subclip, concatenate_videoclips
+from PyQt5.QtGui import * 
+from PyQt5.QtWidgets import *
+import tkinter
+from tkinter import messagebox
+from utils_ffmpeg import extract_subclip, concatenate_videoclips
 
-clips = []
-f1 = open("config.cfg", 'r')
-lines = f1.readlines()
-f1.close()
+logging.basicConfig(filename="crashes.txt", filemode="w")
+root = tkinter.Tk()
+root.withdraw()
+
+try:
+    f1 = open("config.cfg", 'r')
+    lines = f1.readlines()
+    f1.close()
+except FileNotFoundError:
+    messagebox.showerror("Error", "config.cfg file not found!")
 
 RECORDING_START_TIME = ROUND_KILLS = T1 = T2 = T3 = T4 = T5 = SAVED_ROUND = RECORDING = 0
 CLIP_COUNTER = 1
+clips = []
 for line in lines: # locals()["var1"] = 1 -> var1 = 1
     var = line.split()[0].upper()
     val = line.split()[1]
     val = int(val) if val.isnumeric() else val.replace('"','')
     locals()[var] = val # STEAMID, DELETE_RECORDING, SAVE_EVERY_FRAG, CREATE_MOVIE, DELAY_AFTER, DELAY_BEFORE, MAX_2K_TIME, MAX_3K_TIME, MAX_4K_TIME, MAX_5K_TIME
 
+if STEAMID == "":
+    messagebox.showerror("Error", "You need to set your steamid in config.cfg")
+    os._exit(1)
+
+root.destroy()
 #----------------------------------------------------Classes--------------------------------------------------------------------
 class MyServer(HTTPServer):
     def __init__(self, server_address, token, RequestHandler):
@@ -197,17 +213,74 @@ def my_logic(round_phase, round_kills, player_steamid, map_phase):
         clips = []
         CLIP_COUNTER = 1
 
-try:
-    ws = obsws("localhost", 4444, "secret")
-    ws.connect()
-    recording_path = ws.call(requests.GetRecordingFolder())
-    RECORDINGS_PATH = recording_path.datain["rec-folder"]
-    server = MyServer(('localhost', 3000), 'MYTOKENHERE', MyRequestHandler)
-    server.serve_forever()
-
-except (KeyboardInterrupt, SystemExit):
-    if RECORDING:
-       stop_recording()
+def close(recording, sock, server):
+    if recording:
+        stop_recording()
 
     server.server_close()
-    ws.disconnect()
+    sock.disconnect()
+
+def redirect_github():
+    webbrowser.open_new('https://github.com/zepedrotrigo/highlightsCS')
+
+def redirect_steamprofile():
+    webbrowser.open_new('https://steamcommunity.com/id/fortnyce')
+
+def main():
+    try:
+        root = tkinter.Tk()
+        root.withdraw()
+        ws = obsws("localhost", 4444, "secret")
+        ws.connect()
+        recording_path = ws.call(requests.GetRecordingFolder())
+        RECORDINGS_PATH = recording_path.datain["rec-folder"]
+        server = MyServer(('localhost', 3000), 'MYTOKENHERE', MyRequestHandler)
+        server.serve_forever()
+
+    except (ConnectionRefusedError, exceptions.ConnectionFailure):
+        messagebox.showerror("Error", "OBS studio is probably closed!")
+        os._exit(1)
+    except Exception as e:
+        close(RECORDING, ws, server)
+        logging.critical("Exception occurred: ", exc_info=True)
+        messagebox.showerror("Error", "Program crashed. Open crashes.txt for detailed information")
+        os._exit(1)
+
+def tray():
+    app = QApplication([])
+    app.setQuitOnLastWindowClosed(False)
+    
+    # Adding an icon
+    icon = QIcon("headshot.png")
+    
+    # Adding item on the menu bar
+    tray = QSystemTrayIcon()
+    tray.setIcon(icon)
+    tray.setVisible(True)
+    tray.setToolTip("highlightsCS by Fortnyce")
+    
+    # Options menu
+    menu = QMenu()
+
+    option1 = QAction("Visit my Github")
+    option1.triggered.connect(redirect_github)
+    menu.addAction(option1)
+
+    option2 = QAction("+rep my Steam Profile")
+    option2.triggered.connect(redirect_steamprofile)
+    menu.addAction(option2)
+
+    quit = QAction("Quit")
+    quit.triggered.connect(exit)
+    menu.addAction(quit)
+    
+    # Adding options to the System Tray
+    tray.setContextMenu(menu)
+
+    bg_thread = threading.Thread(target=main, args=[])
+    bg_thread.daemon = True
+    bg_thread.start()
+    app.exec_()
+
+if __name__ == "__main__":
+    tray()

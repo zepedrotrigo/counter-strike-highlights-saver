@@ -1,3 +1,1 @@
-make it a system tray app
-
-pyinstaller --name "highlightsCS by Fortnyce" --onefile highlightsCS.py
+pyinstaller --name "highlightsCS by Fortnyce" --onefile --noconsole highlightsCS.py
