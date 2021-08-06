@@ -123,9 +123,9 @@ def detect_highlights(clips, kill_times, max_times, save_every_frag):
 
             for f in range(l):
                 if f in ignore: continue
+                elements = list(range(f, l+1))
 
-                if (kill_times[l] - kill_times[f] < max_times[l]) and kill_times[l] and l: # "and l" because f != l needs to be true
-                    elements = list(range(f, l+1))
+                if (kill_times[l] - kill_times[f] < max_times[l]) and kill_times[len(elements)] and l: # "and l" because f != l needs to be true
                     ignore += elements
                     clips_sorted[f] = Clip(kill_times[f],kill_times[l], CLIP_COUNTER, f"_{len(elements)}k") # they key of this dict preservers the order of the clips
                     CLIP_COUNTER += 1
