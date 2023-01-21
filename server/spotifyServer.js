@@ -2,7 +2,7 @@ const express = require('express')
 const request = require('request');
 const dotenv = require('dotenv');
 
-const port = 3489
+const port = 80
 
 global.access_token = ''
 
