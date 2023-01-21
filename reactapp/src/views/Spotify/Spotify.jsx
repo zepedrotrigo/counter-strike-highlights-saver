@@ -3,7 +3,7 @@ import WebPlayback from '../../components/Spotify/WebPlayback';
 import Login from '../../components/Spotify/Login';
 import './Spotify.css';
 
-function Spotify() {
+function Spotify(props) {
 	const [token, setToken] = useState('');
 
 	useEffect(() => {
@@ -20,7 +20,7 @@ function Spotify() {
 
 	return (
 		<>
-				{ (token === '') ? <Login/> : <WebPlayback token={token} /> }
+			{(token === '') ? <Login /> : <WebPlayback token={token} wsMessage={props.wsMessage}/> }
 		</>
 	);
 }

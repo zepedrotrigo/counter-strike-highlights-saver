@@ -13,7 +13,7 @@ const track = {
 }
 
 function WebPlayback(props) {
-
+    const wsMessage = props.wsMessage;
     const [is_paused, setPaused] = useState(false);
     const [is_active, setActive] = useState(false);
     const [player, setPlayer] = useState(undefined);
@@ -64,6 +64,14 @@ function WebPlayback(props) {
 
         };
     }, []);
+
+    useEffect(() => {
+        if(wsMessage === "pause"){
+            player.pause();
+        }else if(wsMessage === "resume"){
+            player.resume();
+        }
+        }, [wsMessage]);
 
     if (!is_active) { 
         return (

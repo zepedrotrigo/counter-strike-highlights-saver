@@ -5,19 +5,32 @@ import Home from './views/Home/Home';
 import Spotify from './views/Spotify/Spotify';
 
 function App() {
-	const [ws, setWs] = useState(new WebSocket('ws://localhost:3490'));
-	const [message, setMessage] = useState('');
-  
-	useEffect(() => {
-	  ws.onopen = () => {
-		  console.log('Connected to WebSocket server');
-		  handleSend("Client says hi!");
-	  };
-	  ws.onmessage = (event) => {
-			setMessage(event.data);
-		  	console.log(event.data);
-	  };
-	}, [ws]);
+    const [ws, setWs] = useState(null);
+    const [message, setMessage] = useState('');
+
+    useEffect(() => {
+        if (!ws) {
+            const webSocket = new WebSocket('ws://localhost:3490');
+            setWs(webSocket);
+        }
+        else {
+            ws.onopen = () => {
+                console.log('Connected to WebSocket server');
+                handleSend("Client says hi!");
+            };
+            ws.onmessage = (event) => {
+                setMessage(event.data);
+                console.log(event.data);
+            };
+
+            ws.onclose = () => {
+				console.log('Disconnected from WebSocket server');
+				return () => {
+					ws.close();
+				};
+            };
+        }
+    }, [ws]);
   
 	function handleSend(message) {
 	  ws.send(message);
@@ -27,7 +40,7 @@ function App() {
 	<Router>
 		<Routes>
 			  <Route path="/" element={<Home />} />
-			  <Route path="/spotify" element={<Spotify />} />
+			  <Route path="/spotify" element={<Spotify wsMessage={message} />} />
 		</Routes>
 	</Router>
   );
