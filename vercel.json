@@ -1,0 +1,9 @@
+{
+    "version": 2,
+    "builds": [
+      {
+        "src": "server/spotifyServer.js",
+        "use": "@now/node"
+      }
+    ]
+  }

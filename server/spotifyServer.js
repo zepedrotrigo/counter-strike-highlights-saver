@@ -23,7 +23,11 @@ var generateRandomString = function (length) {
 	return text;
 };
 
-var app = express();
+const app = express();
+
+app.get("/", (req, res) => {
+	res.send("Express deployed on Vercel");
+});
 
 app.get('/auth/login', (req, res) => {
 
@@ -75,3 +79,6 @@ app.get('/auth/token', (req, res) => {
 app.listen(port, () => {
 	console.log(`Listening at http://localhost:${port}`)
 })
+
+// Export the Express API
+module.exports = app;
