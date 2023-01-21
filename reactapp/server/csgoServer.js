@@ -2,13 +2,11 @@ const http = require('http');
 const fs = require('fs');
 const WebSocket = require('ws');
 
-const port = 3489;
+const port = 3490;
 const host = '127.0.0.1';
 
-const userName = "Fortnyce"
-let lastSentMessage;
 /* --------------------------------- Server --------------------------------- */
-const wsServer = new WebSocket.Server({ port: 3490 });
+const wsServer = new WebSocket.Server({ port: 3491 });
 let connectedToWs = false;
 let socket;
 
@@ -19,7 +17,6 @@ wsServer.on('connection', (ws) => {
 	ws.on('message', (message) => {
 		console.log(`Received message: ${message}`);
 	});
-	ws.send('Server says hi!');
 
 	connectedToWs = true;
 });
@@ -46,24 +43,20 @@ const server = http.createServer((req, res) => {
 
 /* ----------------------------- Process Payload ---------------------------- */
 function processPayload(data) {
-	const date = new Date(data.provider.timestamp * 1000);
 	let output = '';
-	console.log(data);
-	
-	if (isUserPlaying(data) && lastSentMessage !== "pause") {
-		socket.send('pause');
-		lastSentMessage = "pause";
-	} else if (lastSentMessage !== "resume") {
-		socket.send('resume');
-		lastSentMessage = "resume";
-	}
+	output += data["player"]
+
+	isUserPlaying(data) ? socket.send('pause') : socket.send('resume');
 
 	return output;
 }
 
 /* ------------------------------ My Functions ------------------------------ */
 function isUserPlaying(data) {
-	return data["player"]["name"] == userName;
+	if ("state" in data["player"])
+		return data["player"]["state"]["health"] !== 0 && data["player"]["steamid"] == data["provider"]["steamid"]
+	else
+		return data["player"]["activity"] !== "menu";
 }
 
 

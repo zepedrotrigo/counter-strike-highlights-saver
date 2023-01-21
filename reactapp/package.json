@@ -9,7 +9,7 @@
     "react-scripts": "4.0.3"
   },
   "scripts": {
-    "start": "react-scripts --openssl-legacy-provider start",
+    "start": "set PORT=3488 && react-scripts --openssl-legacy-provider start",
     "build": "react-scripts --openssl-legacy-provider build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",

@@ -10,13 +10,12 @@ function App() {
 
     useEffect(() => {
         if (!ws) {
-            const webSocket = new WebSocket('ws://localhost:3490');
+            const webSocket = new WebSocket('ws://localhost:3491');
             setWs(webSocket);
         }
         else {
             ws.onopen = () => {
                 console.log('Connected to WebSocket server');
-                handleSend("Client says hi!");
             };
             ws.onmessage = (event) => {
                 setMessage(event.data);
