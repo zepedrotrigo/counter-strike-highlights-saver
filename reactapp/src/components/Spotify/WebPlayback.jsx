@@ -18,6 +18,8 @@ function WebPlayback(props) {
     const [is_active, setActive] = useState(false);
     const [player, setPlayer] = useState(undefined);
     const [current_track, setTrack] = useState(track);
+    const [volume, setVolume] = useState(0.5);
+
 
     useEffect(() => {
 
@@ -32,7 +34,7 @@ function WebPlayback(props) {
             const player = new window.Spotify.Player({
                 name: 'CSGO Music Player by Fortnyce',
                 getOAuthToken: cb => { cb(props.token); },
-                volume: 0.5
+                volume: volume
             });
 
             setPlayer(player);
@@ -65,13 +67,21 @@ function WebPlayback(props) {
         };
     }, []);
 
+
+
     useEffect(() => {
         if(wsMessage === "pause"){
             player.pause();
         }else if(wsMessage === "resume"){
             player.resume();
         }
-        }, [wsMessage]);
+    }, [wsMessage]);
+    
+
+    function handleVolumeChange(event) {
+        setVolume(event.target.value);
+        player.setVolume(volume);
+    }
 
     if (!is_active) { 
         return (
@@ -105,6 +115,10 @@ function WebPlayback(props) {
                             <button className="btn-spotify" onClick={() => { player.nextTrack() }} >
                                 &gt;&gt;
                             </button>
+                            <div className="volume-controller">
+                                <i className="volume-controller__icon">&#x1F508;</i>
+                                <input type="range" min={0} max={1} step={0.01} value={volume} onChange={handleVolumeChange} className="volume-controller__slider" />
+                            </div>
                         </div>
                     </div>
                 </div>
