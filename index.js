@@ -1,6 +1,7 @@
 const express = require('express')
 const request = require('request');
 const dotenv = require('dotenv');
+const cors = require('cors')
 
 const port = process.env.PORT || 3489
 
@@ -24,6 +25,7 @@ var generateRandomString = function (length) {
 };
 
 const app = express();
+app.use(cors())
 
 app.get("/", (req, res) => {
 	res.send("Express deployed on Vercel");
