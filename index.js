@@ -11,7 +11,7 @@ dotenv.config()
 var spotify_client_id = process.env.SPOTIFY_CLIENT_ID
 var spotify_client_secret = process.env.SPOTIFY_CLIENT_SECRET
 
-var spotify_redirect_uri = 'https://counter-strike-highlights-saver-odntir186-zepedrotrigo.vercel.app/auth/callback'
+var spotify_redirect_uri = 'http://localhost:3488/auth/callback/auth/callback'
 
 var generateRandomString = function (length) {
 	var text = '';
