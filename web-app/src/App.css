@@ -29,10 +29,16 @@ button {
   padding: 0.5rem 1rem;
   cursor: pointer;
   transition: background-color 0.3s;
+  opacity: 1; /* Set the initial opacity to 1 */
 }
 
-button:hover {
-  background-color: #3b6e8f;
+button:hover:not([disabled]) {
+  background-color: #3b6e8f; /* Apply the hover styles only when the button is not disabled */
+}
+
+button:disabled {
+  opacity: 0.5; /* Set the opacity to a lower value when the button is disabled */
+  cursor: not-allowed; /* Set the cursor style for the disabled button */
 }
 
 table {
