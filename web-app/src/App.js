@@ -55,7 +55,7 @@ const App = () => {
   const getVideoCreationTimestamp = async (file) => {
     const fileInfo = await worker.getFileInfo(file);
     const creationTime = fileInfo.format.tags["creation_time"]
-    const timestamp = Date.parse(creationTime) / 1000;
+    const timestamp = Date.parse(creationTime);
     return timestamp;
   };
 
@@ -80,12 +80,8 @@ const App = () => {
   };
 
   const formatTime = (timeInMilliseconds) => {
-    const totalSeconds = Math.floor(timeInMilliseconds / 1000);
-    const hours = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
-    const minutes = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
-    const seconds = (totalSeconds % 60).toString().padStart(2, '0');
-    const milliseconds = (timeInMilliseconds % 1000).toString().padStart(3, '0');
-    return `${hours}:${minutes}:${seconds}.${milliseconds}`;
+    const date = new Date(timeInMilliseconds);
+    return date.toISOString().slice(11, -1);
   };
 
   const processVideo = async () => {
@@ -94,7 +90,7 @@ const App = () => {
     }
     console.log("processing video", video);
 
-    const CHUNK_SIZE = 4 * (1024 ** 3) - 1; // 4 GB
+    const CHUNK_SIZE = 2 * (1024 ** 3) - 1; // 2 GB
     const fileSize = video.size;
     const numChunks = Math.ceil(fileSize / CHUNK_SIZE);
     let minChunkIdx = 0;
@@ -103,16 +99,17 @@ const App = () => {
       let clip = responseData[clipIdx];
       let success = false;
 
-      // Calculate the start and end times in seconds
-      const startTimeStr = formatTime((clip.start - videoCreationTimestamp) * 1000);
-      const endTimeStr = formatTime((clip.end - videoCreationTimestamp) * 1000);
-      const durationStr = formatTime(endTimeStr - startTimeStr);
+      // Calculate the start and end times of the clip (clip.start and clip.end are in milliseconds)
+      const startTime = clip.start - videoCreationTimestamp - 5000;
+      const endTime = clip.end - videoCreationTimestamp + 3000;
+      const startTimeStr = formatTime(startTime);
+      const durationStr = formatTime(endTime - startTime);
 
 
       for (let chunkIdx = minChunkIdx; chunkIdx < numChunks; chunkIdx++) {
         const chunkStart = chunkIdx * CHUNK_SIZE;
         const chunkEnd = Math.min((chunkIdx + 1) * CHUNK_SIZE, fileSize);
-        console.log(`Processing clip ${clip.name} (${durationStr}) in chunk ${chunkIdx} (${chunkStart}-${chunkEnd})...`);
+        console.log(`Processing clip ${clip.name} (${durationStr}) in chunk ${chunkIdx}...`);
 
         // Write the input video chunk to FFmpeg's memory
         ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(video.slice(chunkStart, chunkEnd)));
