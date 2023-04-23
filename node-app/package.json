@@ -1,0 +1,11 @@
+{
+  "name": "csgo-highlight-saver",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "fortnyce",
+  "license": "MIT",
+  "dependencies": {
+    "fs": "^0.0.1-security",
+    "http": "^0.0.1-security"
+  }
+}

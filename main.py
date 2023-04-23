@@ -9,8 +9,6 @@ from utils_ffmpeg import extract_subclip, concatenate_videoclips
 
 ctypes.windll.user32.ShowWindow( ctypes.windll.kernel32.GetConsoleWindow(), 0 ) # hide console
 logging.basicConfig(filename="crashes.txt", filemode="w")
-root = tkinter.Tk()
-root.withdraw()
 
 try:
     f1 = open("config.cfg", 'r')
@@ -30,11 +28,6 @@ for line in lines: # locals()["var1"] = 1 -> var1 = 1
     val = int(val) if val.isnumeric() else val.replace('"','')
     locals()[var] = val # STEAMID, DELETE_RECORDING, SAVE_EVERY_FRAG, CREATE_MOVIE, DELAY_AFTER, DELAY_BEFORE, MAX_2K_TIME, MAX_3K_TIME, MAX_4K_TIME, MAX_5K_TIME
 
-if STEAMID == "":
-    messagebox.showerror("Error", "You need to set your steamid in config.cfg")
-    os._exit(1)
-
-root.destroy()
 #----------------------------------------------------Classes--------------------------------------------------------------------
 class MyServer(HTTPServer):
     def __init__(self, server_address, token, RequestHandler):
@@ -113,14 +106,6 @@ class Clip:
     def __str__(self) -> str:
         return f"Name: {self.name} Start: {self.start_time:.2f} End: {self.end_time:.2f}"
 
-def start_recording():
-    ws.call(requests.StartRecording())
-    return time.time()
-
-
-def stop_recording():
-    ws.call(requests.StopRecording())
-
 def listen_to_kills(round_kills, prev_val):
     global T1, T2, T3, T4, T5
 
@@ -191,7 +176,7 @@ def my_logic(round_phase, round_kills, player_steamid, map_phase):
     if map_phase == "live":
         if round_phase == "live":
             if not RECORDING:
-                RECORDING_START_TIME = start_recording()
+                RECORDING_START_TIME = time.time()
                 RECORDING = 1
 
             if player_steamid == STEAMID and round_kills: # if alive
@@ -209,70 +194,11 @@ def my_logic(round_phase, round_kills, player_steamid, map_phase):
 
     elif map_phase == None and CLIP_COUNTER != 1:
         if RECORDING:
-            stop_recording()
             RECORDING = 0
 
         process_clips(clips, DELETE_RECORDING, RECORDINGS_PATH, CREATE_MOVIE)
         clips = []
         CLIP_COUNTER = 1
 
-def safe_exit():
-    global RECORDING, ws, server
-
-    if RECORDING:
-        stop_recording()
-
-    server.server_close()
-    ws.disconnect()
-    os._exit(1)
-
-def redirect_github():
-    webbrowser.open_new('https://github.com/zepedrotrigo/highlightsCS')
-
-def redirect_steamprofile():
-    webbrowser.open_new('https://steamcommunity.com/id/fortnyce')
-
-def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
-    try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-
-    return os.path.join(base_path, relative_path)
-
-def tray():
-    # Start main program loop in a daemon thread
-    bg_thread = threading.Thread(target=main, args=[])
-    bg_thread.daemon = True
-    bg_thread.start()
-
-    # Start system tray loop
-    image = Image.open(resource_path("headshot.png"))
-    menu = (pystray.MenuItem('Visit my Github', redirect_github), pystray.MenuItem('+rep my Steam Profile', redirect_steamprofile), pystray.MenuItem('Exit', safe_exit))
-    icon = pystray.Icon("name", image, "highlightsCS by Fortnyce", menu)
-    icon.run()
-
-def main():
-    global ws, server, RECORDINGS_PATH
-    try:
-        root = tkinter.Tk()
-        root.withdraw()
-        ws = obsws("localhost", 4444, "secret")
-        ws.connect()
-        recording_path = ws.call(requests.GetRecordingFolder())
-        RECORDINGS_PATH = recording_path.datain["rec-folder"]
-        server = MyServer(('localhost', 3000), 'MYTOKENHERE', MyRequestHandler)
-        server.serve_forever()
-
-    except (ConnectionRefusedError, exceptions.ConnectionFailure):
-        messagebox.showerror("Error", "OBS studio is probably closed!")
-        os._exit(1)
-    except:
-        logging.critical("Exception occurred: ", exc_info=True)
-        messagebox.showerror("Error", "Program crashed. Open crashes.txt for detailed information")
-        safe_exit()
-
 if __name__ == "__main__":
-    tray()
+    main()

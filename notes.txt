@@ -1,2 +1,0 @@
-fix socket is already close error: websocket._exceptions.WebSocketConnectionClosedException: socket is already closed.
-pyinstaller --name "highlightsCS by Fortnyce" --onefile --noconsole main.py
