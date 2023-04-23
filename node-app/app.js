@@ -4,6 +4,7 @@ const fs = require('fs');
 const port = 45027;
 const host = '127.0.0.1';
 let killTimestamps = {};
+let previousPlayerKills = 0;
 
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/html' });
@@ -16,7 +17,7 @@ const server = http.createServer((req, res) => {
 
     req.on('end', () => {
         if (eventInfo !== '') {
-            console.log(eventInfo);
+            //console.log(eventInfo);
         }
 
         res.end('');
@@ -32,7 +33,7 @@ const server = http.createServer((req, res) => {
 function processPayload(data) {
     saveKillTimestamps(data);
     writeKillTimestampsToFileAndReset(data);
-    return killTimestamps;
+    console.log(killTimestamps);
 }
 
 
@@ -43,22 +44,26 @@ function processPayload(data) {
  * @return {object} - JSON object containing round numbers and kill timestamps
  */
 function saveKillTimestamps(data) {
-    const localPlayerSteamId = readProperty(data, 'provider.steamid');
-    const roundNumber = readProperty(data, 'map.round');
-    const killEvents = readProperty(data, 'added.player.kill');
+    const providerSteamId = readProperty(data, 'provider.steamid');
+    const playerSteamId = readProperty(data, 'player.steamid');
+    const currentMapPhase = readProperty(data, 'map.phase');
+    const roundPhase = readProperty(data, 'round.phase');
+    let roundNumber = readProperty(data, 'map.round');
+    roundNumber = roundPhase === 'over' ? roundNumber - 1 : roundNumber;
+    
+    const playerKills = readProperty(data, 'player.state.round_kills');
 
-    if (killEvents) {
-        killEvents.forEach((killEvent) => {
-            if (killEvent.killer === localPlayerSteamId) {
-                const killTimestamp = killEvent.timestamp;
+    if (currentMapPhase === 'live' && playerKills > 0 && playerKills !== previousPlayerKills && playerSteamId === providerSteamId) {
+        const killTimestamp = Date.now(); // Get current timestamp
+        previousPlayerKills++;
 
-                if (killTimestamps.hasOwnProperty(roundNumber)) {
-                    killTimestamps[roundNumber].push(killTimestamp);
-                } else {
-                    killTimestamps[roundNumber] = [killTimestamp];
-                }
-            }
-        });
+        if (killTimestamps.hasOwnProperty(roundNumber)) {
+            killTimestamps[roundNumber].push(killTimestamp);
+        } else {
+            killTimestamps[roundNumber] = [killTimestamp];
+        }
+    } else if (playerKills == 0 && playerSteamId === providerSteamId) {
+        previousPlayerKills = 0;
     }
 }
 
@@ -66,10 +71,14 @@ function saveKillTimestamps(data) {
 function writeKillTimestampsToFileAndReset(data) {
     const previousMapPhase = readProperty(data, 'previously.map.phase');
     const currentMapPhase = readProperty(data, 'map.phase');
+    console.log(previousMapPhase, currentMapPhase);
 
-    if (previousMapPhase === 'live' && currentMapPhase === 'gameover') {
+    if (previousMapPhase === 'live' && (currentMapPhase === 'gameover' || currentMapPhase === null)) {
+        if (Object.keys(killTimestamps).length === 0)
+            return;
+
         const date = new Date();
-        const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}-${String(date.getHours()).padStart(2, '0')}-${String(date.getMinutes()).padStart(2, '0')}`;
+        const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}-${String(date.getHours()).padStart(2, '0')}h${String(date.getMinutes()).padStart(2, '0')}min`;
         const fileName = `${formattedDate}.json`;
 
         fs.writeFile(fileName, JSON.stringify(killTimestamps), (err) => {
