@@ -182,6 +182,7 @@ def start(round_phase, kills, player_steamid, map_phase):
                 vars["SAVED_ROUND"] = False
             
             if round_phase == "over":
+                save_kills_timestamps(kills)
                 clips = detect_highlights(clips)
                 reset_vars()
 
