@@ -104,7 +104,7 @@ def detect_highlights(clips):
     ignore = []
     clips_sorted = {} # they key of this dict preservers the order of the clips
     kill_times = vars["kills"]
-    max_times = [int(vars[f"MAX_{i+1}K_TIME"]) for i in range(0, vars["round_kills"])]
+    max_times = [int(vars[f"MAX_{i+1}K_TIME"]) for i in range(0, 5)]
 
     if len(kill_times) > 1:
         for l in reversed(range(len(kill_times))):
@@ -187,7 +187,7 @@ def start(round_phase, kills, player_steamid, map_phase):
                 reset_vars()
 
         if map_phase == "gameover" and not vars["SAVED_SCOREBOARD"] and vars["SHOW_SCOREBOARD"] and Clip._id: # record final scoreboard
-            start = time.time()+20
+            start = time.time()+22
             clip1 = Clip(start, start+int(vars["SHOW_SCOREBOARD"]), "_scoreboard")
             clips.append(clip1)
             vars["SAVED_SCOREBOARD"] = True
