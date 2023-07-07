@@ -188,6 +188,7 @@ def start(round_phase, kills, player_steamid, map_phase):
 
         if map_phase == "gameover" and not vars["SAVED_SCOREBOARD"] and vars["SHOW_SCOREBOARD"] and Clip._id: # record final scoreboard
             start = time.time()+22
+            start = time.time()+22
             clip1 = Clip(start, start+int(vars["SHOW_SCOREBOARD"]), "_scoreboard")
             clips.append(clip1)
             vars["SAVED_SCOREBOARD"] = True
